@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:highlighter/highlighter.dart' show highlight, Node;
 
@@ -6,8 +7,6 @@ import 'package:highlighter/highlighter.dart' show highlight, Node;
 class HighlightView extends StatelessWidget {
   /// The original code to be highlighted
   final String source;
-  
-  final Color? backgroundColor;
 
   /// Highlight language
   ///
@@ -31,7 +30,6 @@ class HighlightView extends StatelessWidget {
 
   HighlightView(
     String input, {
-    this.backgroundColor,
     this.language,
     this.theme = const {},
     this.padding,
@@ -80,6 +78,7 @@ class HighlightView extends StatelessWidget {
   // See: https://github.com/flutter/flutter/issues/39998
   // So we just use monospace here for now
   static const _defaultFontFamily = 'monospace';
+
   @override
   Widget build(BuildContext context) {
     var _textStyle = TextStyle(
@@ -91,14 +90,33 @@ class HighlightView extends StatelessWidget {
     }
 
     return Container(
-      color: backgroundColor ?? theme[_rootKey]?.backgroundColor ?? _defaultBackgroundColor,
+      color: theme[_rootKey]?.backgroundColor ?? _defaultBackgroundColor,
       padding: padding,
-      child: SelectableText.rich(
-        TextSpan(
-          style: _textStyle,
-          children:
-              _convert(highlight.parse(source, language: language).nodes!),
-        ),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.topRight,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () async {
+                  await Clipboard.setData(ClipboardData(text: source));
+                },
+                child: Icon(Icons.copy),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: RichText(
+              text: TextSpan(
+                style: _textStyle,
+                children: _convert(
+                    highlight.parse(source, language: language).nodes!),
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
